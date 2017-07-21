@@ -82,22 +82,83 @@ module WordpressApi
     configuration.version = version
   end
 
-  def self.get_posts(opts = {})
+  def self.get(opts = {})
     response = WordpressApi::API.get(
-        uri(:posts),
+        statement(opts),
         {
             headers: WordpressApi::API.headers_for('0'),
-           query: opts,
             basic_auth: authentication
         }.merge!(net_settings)
     )
-    WordpressApi::Response::Posts.new(response)
+    get_response(opts, response)
+  rescue Timeout::Error
+    puts ERROR_MESSAGES[:timeout]
+    raise TimeoutError
+  end
+
+  def self.post(opts = {})
+    raise EndpointNotSupportedError unless opts[:id]
+
+    response = WordpressApi::API.post(
+        statement(opts),
+        {
+            headers: WordpressApi::API.headers_for('0'),
+            # TODO: Confirm auth requirements for post/put methods
+            basic_auth: authentication
+        }.merge!(net_settings)
+    )
+
+    # TODO: Update external sources here (if applicable).
+    get_singular_response(opts, response)
+  rescue Timeout::Error
+    puts ERROR_MESSAGES[:timeout]
+    raise TimeoutError
+  end
+
+  def self.delete(opts = {})
+    raise EndpointNotSupportedError unless opts[:id]
+    # TODO: Add a safe delete mechanism.
+
+    response = WordpressApi::API.delete(
+        statement(opts),
+        {
+            headers: WordpressApi::API.headers_for('0'),
+            # TODO: Confirm auth requirements for delete method
+            basic_auth: authentication
+        }.merge!(net_settings)
+    )
+    get_singular_response(opts, response)
   rescue Timeout::Error
     puts ERROR_MESSAGES[:timeout]
     raise TimeoutError
   end
 
   private
+
+  def self.statement(opts = {})
+    endpoint = opts[:endpoint]
+    singular = opts[:id]
+    [
+      configuration.endpoint,
+      configuration.version,
+      WordpressApi::API::ENDPOINTS[endpoint],
+      singular
+    ].join("/")
+  end
+
+  def self.get_response(opts, response)
+    key = opts[:endpoint]
+    if opts[:id]
+      get_singular_response(opts, response)
+    else
+      WordpressApi::API::RESPONSES[key].constantize.new(response)
+    end
+  end
+
+  def self.get_singular_response(opts, response)
+    key = opts[:endpoint].to_s.chomp('s').to_sym
+    WordpressApi::API::RESPONSES[key].constantize.new(response)
+  end
 
   def self.uri(key)
     [

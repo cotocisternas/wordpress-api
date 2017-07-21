@@ -1,5 +1,6 @@
 require 'httparty'
 require 'wordpress_api/parser'
+require 'wordpress_api/response'
 
 class WordpressApi::API
   include HTTParty
@@ -9,6 +10,11 @@ class WordpressApi::API
 
   ENDPOINTS = {
       posts: 'posts'
+  }.freeze
+
+  RESPONSES = {
+      posts: WordpressApi::Response::Posts.to_s,
+      post:  WordpressApi::Response::Post.to_s      
   }.freeze
 
   def self.headers_for(length)

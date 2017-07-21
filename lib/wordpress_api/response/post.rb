@@ -1,4 +1,5 @@
 require 'hashie/extensions/symbolize_keys'
+require 'wordpress_api/types'
 
 class WordpressApi::Response::Post < WordpressApi::Types::Stash
   property :id, required: true

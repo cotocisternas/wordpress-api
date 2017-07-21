@@ -1,4 +1,5 @@
 require 'hashie/extensions/symbolize_keys'
+require 'wordpress_api/types'
 
 module WordpressApi
   module Response
